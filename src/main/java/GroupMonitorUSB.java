@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 
 import tuwien.auto.calimero.DataUnitBuilder;
 import tuwien.auto.calimero.DetachEvent;
+import tuwien.auto.calimero.GroupAddress;
 import tuwien.auto.calimero.KNXException;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.KNXNetworkLinkUsb;
@@ -48,7 +49,7 @@ import tuwien.auto.calimero.process.ProcessListener;
  *
  * @author B. Malinowsky
  */
-public class GroupMonitorUSB implements ProcessListener
+public class GroupMonitorUSB
 {
 	/**
 	 * Address of your KNXnet/IP server. Replace the host or IP address as necessary.
@@ -58,6 +59,11 @@ public class GroupMonitorUSB implements ProcessListener
 	 * @throws NoSuchAlgorithmException 
 	 * @throws KeyManagementException 
 	 */
+	
+	public static final int VENDOR_ID = 0x135e;
+	public static final int PRODUCT_ID= 0x0024;
+	
+	
 
 	public static void main(final String[] args) throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException, IOException, TimeoutException
 	{
@@ -67,13 +73,21 @@ public class GroupMonitorUSB implements ProcessListener
 	public void run() throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException, IOException, TimeoutException
 	{
 
-		try (KNXNetworkLink knxLink = new KNXNetworkLinkUsb(0x135e, 0x0025,TPSettings.TP1);
+		try (KNXNetworkLink knxLink = new KNXNetworkLinkUsb(VENDOR_ID, PRODUCT_ID,TPSettings.TP1);
 				ProcessCommunicator pc = new ProcessCommunicatorImpl(knxLink)) 
 		{
 
+			ProcessListener processListener = new MyProcessListener();
+			
 			// start listening to group notifications using a process listener
-			pc.addProcessListener(this);
+			pc.addProcessListener(processListener);
 
+//			pc.write(new GroupAddress("0/2/2"), true);
+//			pc.write(new GroupAddress("0/2/2"), false);
+//			pc.write(new GroupAddress("0/2/2"), true);
+//			pc.write(new GroupAddress("0/2/2"), false);
+
+			
 			while (knxLink.isOpen()) Thread.sleep(1000);
 		}
 		catch (final KNXException | InterruptedException | RuntimeException e) {
@@ -81,36 +95,5 @@ public class GroupMonitorUSB implements ProcessListener
 		}
 	}
 
-	public void groupWrite(final ProcessEvent e) { try {
-		print("write.ind", e);
-	} catch (IOException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	}}
-	public void groupReadRequest(final ProcessEvent e) { try {
-		print("read.req", e);
-	} catch (IOException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	} }
-	public void groupReadResponse(final ProcessEvent e) { try {
-		print("read.res", e);
-	} catch (IOException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	} }
-	public void detached(final DetachEvent e) {}
 
-	// Called on every group notification issued by a datapoint on the KNX network. It prints the service primitive,
-	// KNX source and destination address, and Application Service Data Unit (ASDU) to System.out.
-	private  void print(final String svc, final ProcessEvent e) throws IOException
-	{
-		try {
-			System.out.println(LocalTime.now() + " " + e.getSourceAddr() + "->" + e.getDestination() + " " + svc
-					+ ": " + DataUnitBuilder.toHex(e.getASDU(), ""));
-		}
-		catch (final RuntimeException ex) {
-			ex.printStackTrace();
-		}
-	}
 }
