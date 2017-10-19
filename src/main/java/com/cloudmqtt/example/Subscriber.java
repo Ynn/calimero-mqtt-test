@@ -57,16 +57,16 @@ public class Subscriber  {
         return first[0].split(":");
     }
 
-    public void sendMessage(String payload) throws MqttException {
-        MqttMessage message = new MqttMessage(payload.getBytes());
+    public void sendMessage(byte[] bytes) throws MqttException {
+        MqttMessage message = new MqttMessage(bytes);
         message.setQos(qos);
         this.client.publish(this.topic, message); // Blocking publish
     }
 
 
     public static void main(String[] args) throws MqttException, URISyntaxException {
-        Subscriber s = new Subscriber("mqtt://user:passMv@m21.cloudmqtt.com:18029");
-        s.sendMessage("Hello");
-        s.sendMessage("Hello 2");
+        Subscriber s = new Subscriber("mqtt://user:pass@m21.cloudmqtt.com:18029");
+        s.sendMessage("Hello".getBytes());
+        s.sendMessage("Hello 2".getBytes());
     }
 }
